@@ -1,15 +1,308 @@
 <doctype html public!>
 <html>
   <title>Depto de IIND</title>
+    
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.header { padding: 14px 18px 8px; border-bottom: 0.5px solid var(--color-border-tertiary); margin-bottom: 10px; }
+.header h2 { font-size: 15px; font-weight: 500; color: var(--color-text-primary); }
+.header p  { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
+
+.legend-wrap { padding: 0 18px 10px; }
+.legend-title { font-size: 10px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.4px; }
+.legend { display: flex; gap: 10px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--color-text-secondary); }
+.legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+.scroll-wrap { overflow-x: auto; padding-bottom: 8px; }
+.grid { display: grid; grid-template-columns: repeat(8, minmax(118px,1fr)); gap: 7px; padding: 0 12px 12px; min-width: 960px; }
+.semester-col { display: flex; flex-direction: column; gap: 5px; }
+.sem-header  { font-size: 10px; font-weight: 500; color: var(--color-text-secondary); text-align: center; padding: 4px 2px; border-bottom: 0.5px solid var(--color-border-tertiary); margin-bottom: 1px; }
+.sem-credits { font-size: 9px; color: var(--color-text-tertiary); text-align: center; margin-bottom: 3px; }
+
+.course-card {
+  border-radius: 6px; padding: 7px 8px; cursor: pointer;
+  border: 1.5px solid transparent; transition: all 0.15s;
+  min-height: 50px; display: flex; flex-direction: column; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.course-card:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.13); }
+.course-code    { font-size: 8.5px; font-weight: 500; opacity: 0.65; letter-spacing: 0.2px; position: relative; z-index:1; }
+.course-name    { font-size: 10px; font-weight: 500; line-height: 1.3; margin-top: 2px; position: relative; z-index:1; }
+.course-credits { font-size: 8.5px; opacity: 0.55; margin-top: 3px; position: relative; z-index:1; }
+
+/* Nucleus colors — light backgrounds, colored borders */
+.n-estadistica { background:#FDF0F5; border-color:#F4A7C3; color:#4B1528; }
+.n-estadistica.selected { background:#F4A7C3; border-color:#D4537E; }
+.n-investigacion { background:#F3F0FE; border-color:#C5BFF5; color:#26215C; }
+.n-investigacion.selected { background:#C5BFF5; border-color:#7F77DD; }
+.n-financiera { background:#FFF4EC; border-color:#F5C08A; color:#412402; }
+.n-financiera.selected { background:#F5C08A; border-color:#BA7517; }
+.n-produccion { background:#FFFBEC; border-color:#F0D080; color:#412402; }
+.n-produccion.selected { background:#F0D080; border-color:#BA9A10; }
+.n-sistemica  { background:#EBF6F8; border-color:#80C8D5; color:#04342C; }
+.n-sistemica.selected  { background:#80C8D5; border-color:#0F6E56; }
+.n-diseno     { background:#EEF8EE; border-color:#90D490; color:#173404; }
+.n-diseno.selected     { background:#90D490; border-color:#3B6D11; }
+.n-gris       { background:#F4F3F1; border-color:#C8C6BF; color:#2C2C2A; }
+.n-gris.selected       { background:#C8C6BF; border-color:#888780; }
+.n-requisito  { background:#F4F3F1; border-color:#C8C6BF; color:#2C2C2A; font-style: italic; }
+.n-requisito.selected  { background:#C8C6BF; border-color:#888780; }
+
+/* highlight */
+.course-card.prereq  { outline: 2px solid #E24B4A; outline-offset: 1px; }
+.course-card.postreq { outline: 2px solid #1D9E75; outline-offset: 1px; }
+.course-card.dimmed  { opacity: 0.22; }
+
+/* Capstone multicolor stripes */
+.capstone-stripes { position: absolute; inset: 0; display: flex; z-index: 0; border-radius: 5px; overflow: hidden; }
+.capstone-stripes span { flex: 1; opacity: 0.35; }
+
+/* info panel */
+.info-panel { margin: 0 12px 10px; padding: 12px 16px; background: var(--color-background-secondary); border-radius: 8px; border: 0.5px solid var(--color-border-secondary); min-height: 72px; }
+.info-panel.empty { display: flex; align-items: center; justify-content: center; }
+.info-panel.empty p { font-size: 12px; color: var(--color-text-tertiary); }
+.info-name  { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+.info-meta  { font-size: 10px; color: var(--color-text-secondary); margin-bottom: 8px; }
+.info-row   { display: flex; gap: 20px; flex-wrap: wrap; }
+.info-section label { font-size: 9px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 3px; }
+.tags { display: flex; flex-wrap: wrap; gap: 3px; }
+.tag { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 500; }
+.tag-pre  { background: #FCEBEB; color: #791F1F; }
+.tag-post { background: #EAF3DE; color: #27500A; }
+.tag-note { background: #FAEEDA; color: #633806; font-size: 9px; padding: 2px 7px; border-radius: 4px; margin-top: 5px; display: inline-block; }
+.tag-none { font-size: 10px; color: var(--color-text-tertiary); font-style: italic; }
+</style>
+
+
+<center><img src="https://industrial.uniandes.edu.co/sites/default/files/Banner/inscripciones20262.jpg" width=1500  height=420></center>
+<center>
+<div class="header">
+  <h2>Plan de Estudios — Ingeniería Industrial Uniandes</h2>
+  <p>Haz clic en un curso para ver sus prerrequisitos y los cursos que desbloquea.</p>
+</div>
+</center>
+
+
+<div class="legend-wrap">
+  <div class="legend-title">Componentes de Núcleo</div>
+  <center>
+  <div class="legend">
+   
+    <div class="legend-item"><div class="legend-dot" style="background:#F4A7C3;border:1.5px solid #D4537E"></div>Estadística Aplicada y Analítica de Datos</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#C5BFF5;border:1.5px solid #7F77DD"></div>Investigación de Operaciones y Ciencias de la Decisión</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#F5C08A;border:1.5px solid #BA7517"></div>Ingeniería Financiera</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#F0D080;border:1.5px solid #BA9A10"></div>Producción, Logística y Calidad</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#80C8D5;border:1.5px solid #0F6E56"></div>Ingeniería Sistémica Organizacional</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#90D490;border:1.5px solid #3B6D11"></div>Diseño</div>
+    <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(to right,#F4A7C3,#C5BFF5,#F5C08A,#F0D080,#80C8D5,#90D490);border:1.5px solid #888"></div>Capstone Project</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#C8C6BF;border:1.5px solid #888780"></div>Otros / Requisitos</div>
+  </div>
+  </center>
+
+  <div style="margin-top:8px;" class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#E24B4A;border-radius:50%"></div><span style="color:#A32D2D">Prerrequisito</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1D9E75;border-radius:50%"></div><span style="color:#085041">Requerido en</span></div>
+  </div>
+</div>
+
+<div class="info-panel empty" id="info-panel"><p>Selecciona un curso para ver detalles</p></div>
+
+<div class="scroll-wrap"><div class="grid" id="grid"></div></div>
+
+<script>
+// area codes: n-estadistica, n-investigacion, n-financiera, n-produccion, n-sistemica, n-diseno, n-gris, n-requisito, n-capstone
+const courses = [
+  // ── I ──
+  { id:"CBU-1",      name:"CBU 1",                           credits:3, sem:1, area:"n-gris",   pre:[] },
+  { id:"PCC",        name:"Pensar, Comunicar y Colaborar",   credits:3, sem:1, area:"n-gris",
+    pre:[], note:"Código pendiente de asignación." },
+  { id:"MATE-1203",  name:"Cálculo Diferencial",             credits:3, sem:1, area:"n-gris",
+    pre:[], note:"Requiere haber aprobado precálculo o la prueba diagnóstica de matemáticas." },
+  { id:"ISIS-1221",  name:"Introducción a la Programación",  credits:3, sem:1, area:"n-gris",   pre:[] },
+  { id:"IIND-1000",  name:"Introducción a la Ing. Industrial", credits:3, sem:1, area:"n-diseno", pre:[] },
+
+
+
+  // ── II ──
+  { id:"CBU-2",      name:"CBU 2",                           credits:3, sem:2, area:"n-gris",   pre:[] },
+  { id:"CBU-3",      name:"CBU 3",                           credits:3, sem:2, area:"n-gris",   pre:[] },
+  { id:"MATE-1214",  name:"Cálculo Integral y Ec. Diferenciales", credits:3, sem:2, area:"n-gris", pre:["MATE-1203"] },
+  { id:"FISI-1518",  name:"Física 1",                        credits:3, sem:2, area:"n-gris",   pre:["MATE-1203"] },
+  { id:"IIND-2111",  name:"Fund. de Analítica de Datos",     credits:3, sem:2, area:"n-gris",   pre:["ISIS-1221"] },
+  { id:"ECON-2108",  name:"Fundamentos de Economía",         credits:3, sem:2, area:"n-gris",   pre:[] },
+
+
+  // ── III ──
+  { id:"CBU-4",      name:"CBU 4",                           credits:3, sem:3, area:"n-gris",   pre:[] },
+  { id:"MATE-1105",  name:"Álgebra Lineal",                  credits:3, sem:3, area:"n-gris",   pre:["MATE-1203"] },
+  { id:"FISI-1528",  name:"Física 2",                        credits:3, sem:3, area:"n-gris",   pre:["FISI-1518"] },
+  { id:"IIND-2205",  name:"Ingeniería de Producción",        credits:3, sem:3, area:"n-produccion",
+    pre:["IIND-2111"], note:"También requiere haber aprobado precálculo o la prueba diagnóstica de matemáticas." },
+  { id:"IIND-2405",  name:"Fund. de Analítica Financiera",   credits:3, sem:3, area:"n-financiera",
+    pre:["ECON-2108","IIND-1000","ISIS-1221"] },
+  { id:"IIND-2001",  name:"Diseño en Ing. Industrial",       credits:3, sem:3, area:"n-diseno",
+    pre:["IIND-1000","IIND-2111","PCC"] },
+
+
+  // ── IV ──
+  { id:"CBU-5",      name:"CBU 5",                           credits:3, sem:4, area:"n-gris",   pre:[] },
+  { id:"MATE-1207",  name:"Cálculo Vectorial",               credits:3, sem:4, area:"n-gris",   pre:["MATE-1105","MATE-1214"] },
+  { id:"IIND-2401",  name:"Análisis de Decisión de Inversión", credits:3, sem:4, area:"n-financiera",
+    pre:["IIND-2405","MATE-1203","IIND-1000"] },
+  { id:"IIND-2106",  name:"Probabilidad y Estadística 1",    credits:3, sem:4, area:"n-estadistica",
+    pre:["MATE-1105","MATE-1214"] },
+  { id:"IIND-2501",  name:"Modelado en Optimización",        credits:3, sem:4, area:"n-investigacion",
+    pre:["MATE-1105","IIND-2111"] },
+  { id:"IIND-2304",  name:"Modelado y Simulación Sistémica", credits:3, sem:4, area:"n-sistemica",
+    pre:["MATE-1105","MATE-1214","IIND-1000"] },
+
   
-  <style>
-  body{
-    color: white;
-    background-color: black; /* Fondo oscuro para que el texto se vea */
-    font-family: Arial, sans-serif;}
- </style> 
-<body>
-<h1>Hola mundo</h1>
-<a href="https://industrial.uniandes.edu.co/" linkcolor="white">Presioname</a>
-</body> 
+  { id:"LENG-RD",    name:"Lectura en Inglés",               credits:0, sem:4, area:"n-requisito", pre:[] },
+
+  // ── V ──
+  { id:"DERE-13OO",  name:"Constitución y Democracia",       credits:3, sem:5, area:"n-gris",   pre:[] },
+  { id:"IIND-2502",  name:"Modelado de Sistemas Bajo Incertidumbre", credits:3, sem:5, area:"n-investigacion",
+    pre:["ISIS-1221","PCC","MATE-1207","IIND-2106","LENG-RD"] },
+  { id:"IIND-2305",  name:"Práctica Sistémica",              credits:3, sem:5, area:"n-sistemica",
+    pre:["IIND-2106","IIND-2304"] },
+  { id:"IIND-2206",  name:"Ing. de la Cadena de Suministro", credits:3, sem:5, area:"n-produccion",
+    pre:["IIND-2501","IIND-2205"] },
+  { id:"IIND-2112",  name:"Fund. de Modelado Estadístico",   credits:3, sem:5, area:"n-estadistica",
+    pre:["MATE-1207","IIND-2106"] },
+
+
+  // ── VI ──
+  { id:"ELEC-CIE-1", name:"Electiva de Ciencias",            credits:3, sem:6, area:"n-gris",   pre:[] },
+  { id:"ELEC-ING",   name:"Electiva en Ingeniería",          credits:3, sem:6, area:"n-gris",   pre:[] },
+  { id:"BOLT-1",     name:"Bolsa de Créditos Electivos",     credits:8, sem:6, area:"n-gris",   pre:[] },
+  { id:"IIND-3010",  name:"Proyectos de Diseño en IIND",     credits:3, sem:6, area:"n-diseno",
+    pre:["IIND-2001","IIND-2205","IIND-2304","IIND-2401","IIND-2112","LENG-RD","IIND-2501"] },
+  { id:"SABRE",      name:"Saber Pro",                       credits:0, sem:6, area:"n-requisito", pre:[] },
+
+  // ── VII ──
+  { id:"CLE-1",      name:"Curso de Libre Elección",         credits:3, sem:7, area:"n-gris",   pre:[] },
+  { id:"ELEC-CIE-2", name:"Electiva de Ciencias",            credits:3, sem:7, area:"n-gris",   pre:[] },
+  { id:"BOLT-2",     name:"Bolsa de Créditos Electivos",     credits:12, sem:7, area:"n-gris",  pre:[] },
+  { id:"INTER",      name:"Requisito de Internacionalización", credits:0, sem:7, area:"n-requisito", pre:[] },
+
+  // ── VIII ──
+  { id:"IIND-3011",  name:"Capstone Project",                credits:3, sem:8, area:"n-capstone",
+    pre:["IIND-2502","IIND-2305","IIND-2112","IIND-2206","IIND-3010"] },
+  { id:"CLE-2",      name:"Curso de Libre Elección",         credits:3, sem:8, area:"n-gris",   pre:[] },
+  { id:"BOLT-3",     name:"Bolsa de Créditos Electivos",     credits:9, sem:8, area:"n-gris",   pre:[] },
+  { id:"LENG-3999",  name:"Dominio de una Segunda Lengua",   credits:3, sem:8, area:"n-requisito", pre:[] },
+];
+
+const semCredits = {1:15, 2:18, 3:18, 4:18, 5:15, 6:17, 7:18, 8:15};
+
+// Build maps
+const byId = {};
+courses.forEach(c => { byId[c.id] = c; });
+const postreqs = {};
+courses.forEach(c => { postreqs[c.id] = []; });
+courses.forEach(c => { c.pre.forEach(p => { if(postreqs[p]) postreqs[p].push(c.id); }); });
+
+const semNames = ["I Semestre","II Semestre","III Semestre","IV Semestre","V Semestre","VI Semestre","VII Semestre","VIII Semestre"];
+const capstoneColors = ["#F4A7C3","#C5BFF5","#F5C08A","#F0D080","#80C8D5","#90D490"];
+
+const grid = document.getElementById("grid");
+const panel = document.getElementById("info-panel");
+let selected = null;
+
+[1,2,3,4,5,6,7,8].forEach((s, si) => {
+  const col = document.createElement("div");
+  col.className = "semester-col";
+
+  const hdr = document.createElement("div");
+  hdr.className = "sem-header";
+  hdr.textContent = semNames[si];
+  col.appendChild(hdr);
+
+  const cr = document.createElement("div");
+  cr.className = "sem-credits";
+  cr.textContent = (semCredits[s] || "?") + " créditos";
+  col.appendChild(cr);
+
+  courses.filter(c => c.sem === s).forEach(c => {
+    const card = document.createElement("div");
+    card.className = "course-card " + c.area;
+    card.id = "c-" + c.id;
+
+    // Capstone multicolor stripes
+    if (c.area === "n-capstone") {
+      const stripes = document.createElement("div");
+      stripes.className = "capstone-stripes";
+      capstoneColors.forEach(col => {
+        const sp = document.createElement("span");
+        sp.style.background = col;
+        stripes.appendChild(sp);
+      });
+      card.appendChild(stripes);
+      card.style.borderColor = "#aaa";
+      card.style.color = "#1a1a1a";
+    }
+
+    const showCode = !["CBU-1","CBU-2","CBU-3","CBU-4","CBU-5","PCC","ELEC-ING","ELEC-CIE-1","ELEC-CIE-2","BOLT-1","BOLT-2","BOLT-3","CLE-1","CLE-2","INTER","SABRE","LENG-RD","LENG-3999","DERE-1300"].includes(c.id);
+
+    card.innerHTML += `
+      <div class="course-code">${showCode ? c.id : ""}</div>
+      <div class="course-name">${c.name}</div>
+      <div class="course-credits">${c.credits > 0 ? c.credits + " crédito" + (c.credits !== 1 ? "s" : "") : "Requisito"}</div>
+    `;
+    card.addEventListener("click", () => selectCourse(c.id));
+    col.appendChild(card);
+  });
+
+  grid.appendChild(col);
+});
+
+function selectCourse(id) {
+  document.querySelectorAll(".course-card").forEach(el => {
+    el.classList.remove("prereq","postreq","dimmed","selected");
+  });
+
+  if (selected === id) {
+    selected = null;
+    panel.className = "info-panel empty";
+    panel.innerHTML = "<p>Selecciona un curso para ver detalles</p>";
+    return;
+  }
+  selected = id;
+
+  const c = byId[id];
+  const preSet  = new Set(c.pre);
+  const postSet = new Set(postreqs[id] || []);
+
+  document.querySelectorAll(".course-card").forEach(el => {
+    const eid = el.id.replace("c-", "");
+    if (eid === id)            el.classList.add("selected");
+    else if (preSet.has(eid))  el.classList.add("prereq");
+    else if (postSet.has(eid)) el.classList.add("postreq");
+    else                       el.classList.add("dimmed");
+  });
+
+  panel.className = "info-panel";
+  const preTags  = c.pre.length
+    ? c.pre.map(p => `<span class="tag tag-pre">${byId[p]?.name || p}</span>`).join("")
+    : `<span class="tag-none">Ninguno</span>`;
+  const postTags = (postreqs[id]||[]).length
+    ? postreqs[id].map(p => `<span class="tag tag-post">${byId[p]?.name || p}</span>`).join("")
+    : `<span class="tag-none">Ninguno</span>`;
+  const noteHtml = c.note ? `<div style="margin-top:6px"><span class="tag-note">⚠ ${c.note}</span></div>` : "";
+  const showCode = !["CBU-1","CBU-2","CBU-3","CBU-4","CBU-5","PCC","ELEC-ING","ELEC-CIE-1","ELEC-CIE-2","BOLT-1","BOLT-2","BOLT-3","CLE-1","CLE-2","INTER","SABRE","LENG-RD","LENG-3999","DERE-1300"].includes(id);
+
+  panel.innerHTML = `
+    <div class="info-name">${c.name}</div>
+    <div class="info-meta">${showCode ? id + " · " : ""}Semestre ${c.sem} · ${c.credits > 0 ? c.credits + " créditos" : "Requisito"}</div>
+    <div class="info-row">
+      <div class="info-section"><label>🔴 Prerrequisitos</label><div class="tags">${preTags}</div></div>
+      <div class="info-section"><label>🟢 Requerido en</label><div class="tags">${postTags}</div></div>
+    </div>
+    ${noteHtml}
+  `;
+}
+</script>
+
+
 </html>
